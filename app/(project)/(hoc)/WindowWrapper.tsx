@@ -14,6 +14,12 @@ type DraggableInstance = {
   enable: () => void;
 };
 
+const EDGE_GESTURE_MIN = 32;
+const EDGE_GESTURE_MAX = 88;
+
+const getEdgeGestureWidth = (viewportWidth: number) =>
+  Math.min(EDGE_GESTURE_MAX, Math.max(EDGE_GESTURE_MIN, Math.round(viewportWidth * 0.18)));
+
 const DOCK_WINDOW_ORDER = dockApps
   .filter((app) => app.canOpen)
   .map((app) => app.id as WindowKey);
@@ -41,6 +47,7 @@ const WindowWrapper = <P extends object>(
       y: number;
       fromHeader: boolean;
       startedInZoomedContent: boolean;
+      startedAtEdge: boolean;
     } | null>(null);
 
     // ✅ Per-window drag memory
@@ -173,11 +180,19 @@ const WindowWrapper = <P extends object>(
       );
 
       const touch = event.changedTouches[0];
+      const viewportWidth = typeof window !== "undefined" ? window.innerWidth : 0;
+      const edgeWidth = getEdgeGestureWidth(viewportWidth);
+      const startedAtEdge =
+        touch.clientX <= edgeWidth ||
+        touch.clientX >= viewportWidth - edgeWidth;
+      const startedInRightHalf = viewportWidth > 0 ? touch.clientX >= viewportWidth * 0.5 : false;
       swipeStart.current = {
         x: touch.clientX,
         y: touch.clientY,
         fromHeader,
-        startedInZoomedContent
+        startedInZoomedContent,
+        startedAtEdge,
+        startedInRightHalf
       };
     };
 
@@ -192,6 +207,8 @@ const WindowWrapper = <P extends object>(
       const absY = Math.abs(deltaY);
       const fromHeader = swipeStart.current.fromHeader;
       const startedInZoomedContent = swipeStart.current.startedInZoomedContent;
+      const startedAtEdge = swipeStart.current.startedAtEdge;
+      const startedInRightHalf = swipeStart.current.startedInRightHalf;
 
       swipeStart.current = null;
 
@@ -199,7 +216,8 @@ const WindowWrapper = <P extends object>(
         return;
       }
 
-      if (absX > 90 && absX > absY * 1.2) {
+      const isLeftSwipe = deltaX < 0;
+      if (!startedAtEdge && startedInRightHalf && isLeftSwipe && absX > 90 && absX > absY * 1.2) {
         const clearDockFocus = () => {
           const dockButtons = document.querySelectorAll<HTMLButtonElement>("#dock .dock-icon");
           dockButtons.forEach((button) => button.blur());

@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import Navbar from "@/app/(project)/(components)/NavBar";
-import FullscreenPrompt from "@/app/(project)/(components)/FullscreenPrompt";
 import MobileNotificationPanel from "@/app/(project)/(components)/MobileNotificationPanel";
 import MobileDock from "@/app/(project)/(components)/MobileDock";
 import MobileAppDrawer from "@/app/(project)/(components)/MobileAppDrawer";
@@ -55,7 +54,6 @@ const App = ({
 
   return (
     <main>
-      <FullscreenPrompt />
       <Navbar />
       <MobileNotificationPanel musicTracks={musicTracksData} />
       <Welcome content={welcomeContent} />
